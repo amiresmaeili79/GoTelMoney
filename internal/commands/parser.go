@@ -9,7 +9,7 @@ import (
 
 func WhatIsCommand(msg string) (conversations.ConvType, error) {
 	for key, value := range conversations.Commands {
-		if strings.Contains(msg, key) {
+		if strings.Compare(key, msg) == 0 {
 			return value, nil
 		}
 	}

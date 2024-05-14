@@ -1,7 +1,7 @@
 package conversations
 
-type ConvType int64
-type AddExpenseTypeOrder int64
+type ConvType int
+type AddExpenseTypeOrder int
 
 const (
 	AddExpenseType ConvType = iota
@@ -12,9 +12,9 @@ const (
 var Commands map[string]ConvType
 
 const (
-	Start AddExpenseTypeOrder = iota
-	AskName
-	Submit
+	StartAddExpenseType AddExpenseTypeOrder = iota
+	AskNameAddExpenseType
+	SubmitAddExpenseType
 )
 
 func init() {
