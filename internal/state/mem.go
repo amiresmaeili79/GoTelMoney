@@ -33,3 +33,12 @@ func (mem *InMemoryState) ChangeState(chatId int64, state string) error {
 	}
 	return nil
 }
+
+func (mem *InMemoryState) DeleteState(chatId int64) error {
+	_, exists := mem.State[chatId]
+	if !exists {
+		return fmt.Errorf("session %d does not exist", chatId)
+	}
+	delete(mem.State, chatId)
+	return nil
+}
