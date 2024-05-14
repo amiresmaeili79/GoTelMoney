@@ -1,0 +1,30 @@
+package repositories
+
+import (
+	"github.com/amir79esmaeili/go-tel-money/internal/models"
+	"gorm.io/gorm"
+)
+
+type ExpenseTypeRepositoryImpl struct {
+	db *gorm.DB
+}
+
+func NewExpenseTypeRepository(db *gorm.DB) *ExpenseTypeRepositoryImpl {
+	return &ExpenseTypeRepositoryImpl{db}
+}
+
+func (repo *ExpenseTypeRepositoryImpl) Create(exType *models.ExpenseType) error {
+	return repo.db.Create(exType).Error
+}
+
+func (repo *ExpenseTypeRepositoryImpl) All(userId uint) []models.ExpenseType {
+	var types []models.ExpenseType
+	repo.db.Find(&types, "user_id = ?", userId)
+	return types
+}
+
+func (repo *ExpenseTypeRepositoryImpl) FindByName(name string, userID uint) (models.ExpenseType, error) {
+	var exType models.ExpenseType
+	err := repo.db.First(&exType, "user_id = ? AND name = ?", userID, name).Error
+	return exType, err
+}

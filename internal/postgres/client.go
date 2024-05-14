@@ -20,6 +20,8 @@ func ConnectToDB(cfg *cfg.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.ExpenseType{})
+	db.AutoMigrate(&models.Expense{})
 	log.Println("[INFO] Database connected...")
 	return db, nil
 }

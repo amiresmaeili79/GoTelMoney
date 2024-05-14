@@ -5,9 +5,13 @@ import (
 	"log"
 
 	"github.com/amir79esmaeili/go-tel-money/internal/cfg"
+	"github.com/amir79esmaeili/go-tel-money/internal/commands"
+	"github.com/amir79esmaeili/go-tel-money/internal/conversations"
+	"github.com/amir79esmaeili/go-tel-money/internal/models"
 	"github.com/amir79esmaeili/go-tel-money/internal/postgres"
 	"github.com/amir79esmaeili/go-tel-money/internal/repositories"
 	"github.com/amir79esmaeili/go-tel-money/internal/services"
+	"github.com/amir79esmaeili/go-tel-money/internal/state"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cobra"
 )
@@ -37,6 +41,45 @@ func setUpTelegram(config *cfg.Config) *tgbotapi.BotAPI {
 	return bot
 }
 
+// Handles chat based commands with respect to session
+func handleMessageCommands(bot *tgbotapi.BotAPI, update *tgbotapi.Update,
+	inMemState *state.InMemoryState, tlgService *services.TelegramService) {
+	chatID := update.Message.Chat.ID
+
+	var command conversations.ConvType
+	var conversation *models.Conversation
+
+	if session, err := inMemState.GetSession(chatID); err != nil {
+		// This is a new session
+		command, err = commands.WhatIsCommand(update.Message.Text)
+		if err == nil {
+			conversation = &models.Conversation{
+				Type:  command,
+				State: 0,
+			}
+			inMemState.CreateSession(chatID, conversation)
+		}
+	} else {
+		// Continue a session
+		conversation = session.(*models.Conversation)
+		command = conversation.Type
+	}
+
+	var reply *tgbotapi.MessageConfig
+
+	switch command {
+	case conversations.AddExpenseType:
+		reply = tlgService.AddExpenseType(*update)
+	default:
+		invalidMess := tgbotapi.NewMessage(chatID, conversations.Invalid)
+		reply = &invalidMess
+	}
+
+	if _, err := bot.Send(reply); err != nil {
+		log.Panic(err)
+	}
+}
+
 func startGoTelMoney(cmd *cobra.Command) {
 	configPath, _ := cmd.Flags().GetString("cfg")
 	config := cfg.ParseConfig(configPath)
@@ -52,7 +95,9 @@ func startGoTelMoney(cmd *cobra.Command) {
 	}
 
 	userRepository := repositories.NewUserRepository(db)
-	telegramService := services.NewTelegramService(userRepository)
+	expenseTypeRepository := repositories.NewExpenseTypeRepository(db)
+	inMemState := state.NewInMemoryState()
+	telegramService := services.NewTelegramService(userRepository, expenseTypeRepository, inMemState)
 
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message updates
@@ -70,11 +115,13 @@ func startGoTelMoney(cmd *cobra.Command) {
 				}
 			default:
 				fmt.Println("hi")
-			}
 
+			}
 			if _, err := bot.Send(reply); err != nil {
 				log.Panic(err)
 			}
+		} else {
+			handleMessageCommands(bot, &update, inMemState, telegramService)
 		}
 	}
 }
