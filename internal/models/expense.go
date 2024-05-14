@@ -7,8 +7,10 @@ import (
 )
 
 type ExpenseType struct {
-	ID   uint `gorm:"primaryKey"`
-	Name string
+	ID     uint `gorm:"primaryKey"`
+	UserID uint
+	User   User `gorm:"foreignkey:UserID"`
+	Name   string
 }
 
 type Expense struct {
@@ -18,4 +20,6 @@ type Expense struct {
 	Amount        float32
 	ExpenseType   ExpenseType `gorm:"foreignkey:ExpenseTypeID"`
 	ExpenseTypeID uint
+	UserID        uint
+	User          User `gorm:"foreignkey:UserID"`
 }
