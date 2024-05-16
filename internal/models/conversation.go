@@ -9,11 +9,3 @@ type Conversation struct {
 	State int
 	Data  interface{}
 }
-
-func NewConversation(t commands.ConvType, data interface{}) *Conversation {
-	return &Conversation{
-		Type:  t,
-		State: 0,
-		Data:  data,
-	}
-}

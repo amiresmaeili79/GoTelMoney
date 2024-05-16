@@ -14,7 +14,6 @@ const (
 const (
 	StartAddExpenseType AddExpenseTypeOrder = iota
 	AskNameAddExpenseType
-	SubmitAddExpenseType
 )
 
 const (
@@ -23,5 +22,4 @@ const (
 	AskDescriptionAddExpense
 	AskDateAddExpense
 	AskTypeAddExpense
-	SubmitAddExpense
 )
