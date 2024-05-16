@@ -6,7 +6,7 @@ import (
 
 	"github.com/amir79esmaeili/go-tel-money/internal/cfg"
 	"github.com/amir79esmaeili/go-tel-money/internal/commands"
-	"github.com/amir79esmaeili/go-tel-money/internal/conversations"
+	"github.com/amir79esmaeili/go-tel-money/internal/messages"
 	"github.com/amir79esmaeili/go-tel-money/internal/models"
 	"github.com/amir79esmaeili/go-tel-money/internal/postgres"
 	"github.com/amir79esmaeili/go-tel-money/internal/repositories"
@@ -46,7 +46,7 @@ func handleMessageCommands(bot *tgbotapi.BotAPI, update *tgbotapi.Update,
 	inMemState *state.InMemoryState, tlgService *services.TelegramService) {
 	chatID := update.Message.Chat.ID
 
-	var command conversations.ConvType
+	var command messages.ConvType
 	var conversation *models.Conversation
 
 	if session, err := inMemState.GetSession(chatID); err != nil {
@@ -68,13 +68,15 @@ func handleMessageCommands(bot *tgbotapi.BotAPI, update *tgbotapi.Update,
 	var reply *tgbotapi.MessageConfig
 
 	switch command {
-	case conversations.AddExpenseType:
+	case messages.AddExpenseType:
 		reply = tlgService.AddExpenseType(*update)
+	case messages.AddExpense:
+		reply = tlgService.AddExpense(*update)
 	default:
-		invalidMess := tgbotapi.NewMessage(chatID, conversations.Invalid)
+		invalidMess := tgbotapi.NewMessage(chatID, messages.Invalid)
 		reply = &invalidMess
 	}
-
+	reply.ReplyMarkup = nil
 	if _, err := bot.Send(reply); err != nil {
 		log.Panic(err)
 	}
@@ -96,8 +98,9 @@ func startGoTelMoney(cmd *cobra.Command) {
 
 	userRepository := repositories.NewUserRepository(db)
 	expenseTypeRepository := repositories.NewExpenseTypeRepository(db)
+	expenseRepository := repositories.NewExpenseRepository(db)
 	inMemState := state.NewInMemoryState()
-	telegramService := services.NewTelegramService(userRepository, expenseTypeRepository, inMemState)
+	telegramService := services.NewTelegramService(userRepository, expenseTypeRepository, expenseRepository, inMemState)
 
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message updates

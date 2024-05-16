@@ -1,6 +1,8 @@
-package conversations
+package messages
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+import (
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
 const (
 	WelcomeMsg = `Hello dear %s
@@ -8,8 +10,8 @@ We are happy to see you here 🎉.`
 	Invalid        = "I don't know man!"
 	NewDescription = "✏️ The description of your expense:"
 	NewAmount      = "✏️ The amount of your expense:"
-	Types          = "------------\n🗂️ Your current types:\n"
-	TypeRow        = "🟢 %s\n"
+	Types          = "------------\n🗂️ Your current types 👇\n"
+	TypeRow        = "◽ %s\n"
 )
 
 var MainMenu = tgbotapi.NewReplyKeyboard(
