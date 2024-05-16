@@ -1,9 +1,11 @@
 package models
 
-import "github.com/amir79esmaeili/go-tel-money/internal/conversations"
+import (
+	"github.com/amir79esmaeili/go-tel-money/internal/commands"
+)
 
 type Conversation struct {
-	Type  conversations.ConvType
+	Type  commands.ConvType
 	State int
 	Data  interface{}
 }

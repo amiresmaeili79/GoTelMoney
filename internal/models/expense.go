@@ -13,6 +13,10 @@ type ExpenseType struct {
 	Name   string
 }
 
+func (t *ExpenseType) ToDisplay() string {
+	return t.Name
+}
+
 type Expense struct {
 	gorm.Model
 	Date          time.Time
