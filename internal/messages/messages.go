@@ -10,13 +10,14 @@ We are happy to see you here 🎉.`
 	NewDescription = "✏️ The description of your expense?"
 	NewAmount      = "✏️ The amount of your expense?"
 	NewType        = "Name of the new type?"
-	NewDate        = "The date of your expense?"
+	NewDate        = "The date of your expense? Select the date or just simply type it (e.g. 2024-12-19)."
 
 	Types                 = "🗂️ Your current types 👇\n"
 	TypeRow               = "◽ %s\n"
 	TypeAddedSuccessfully = "New type '%s' added!"
 	CancelMessage         = "Okay! Back to the main menu."
 	NewExpenseSaved       = "Done! You're good to go."
+	AskType               = "Please select the type of expense!"
 )
 
 // Error Messages

@@ -12,6 +12,7 @@ import (
 	"log"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -241,13 +242,24 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 	case int(commands.AskDescriptionAddExpense):
 		expense.Description = u.Message.Text
 		c.State += 1
-		t.bot.Send(tgbotapi.NewMessage(chatId, messages.NewDate))
+		msg := tgbotapi.NewMessage(chatId, messages.NewDate)
+		msg.ReplyMarkup = utils.GenerateCalendar(time.Now().Year(), time.Now().Month())
+		t.bot.Send(msg)
 	case int(commands.AskDateAddExpense):
-		date, err := time.Parse("2006-01-02 15:04:05", u.Message.Text)
-		if err != nil {
-			t.bot.Send(tgbotapi.NewMessage(chatId, messages.InvalidDate))
-			slog.Error("Failed to parse date, %v\n", err)
-			return
+		var date time.Time
+		if u.Message == nil {
+			if strings.ContainsAny(u.CallbackQuery.Data, utils.BtnNext+utils.BtnPrev) {
+				cal := utils.HandleButton(u.CallbackQuery.Data)
+				msg := tgbotapi.NewEditMessageReplyMarkup(chatId, u.CallbackQuery.Message.MessageID, cal)
+				t.bot.Send(msg)
+				return
+			} else {
+				date, err = time.Parse("2006-01-02", u.CallbackQuery.Data)
+				callback := tgbotapi.NewCallback(u.CallbackQuery.ID, u.CallbackQuery.Data)
+				t.bot.Request(callback)
+			}
+		} else {
+			date, err = time.Parse("2006-01-02", u.Message.Text)
 		}
 		expense.Date = date
 
@@ -257,7 +269,7 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 			data = append(data, &exType) // converting to struct
 		}
 		replyMarkup := utils.GetDynamicInlineKeyboard(data)
-		msg := tgbotapi.NewMessage(chatId, "test")
+		msg := tgbotapi.NewMessage(chatId, messages.AskType)
 		msg.ReplyMarkup = replyMarkup
 		c.State += 1
 		t.bot.Send(msg)
@@ -276,6 +288,8 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 			return
 		}
 		t.inMemState.DeleteState(chatId)
+		callback := tgbotapi.NewCallback(u.CallbackQuery.ID, u.CallbackQuery.Data)
+		t.bot.Request(callback)
 		msg := tgbotapi.NewMessage(chatId, messages.NewExpenseSaved)
 		msg.ReplyMarkup = messages.MainMenu
 		t.bot.Send(msg)
