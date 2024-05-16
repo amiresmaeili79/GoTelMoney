@@ -1,4 +1,4 @@
-package messages
+package commands
 
 type ConvType int
 type AddExpenseTypeOrder int
@@ -8,6 +8,7 @@ const (
 	AddExpenseType ConvType = iota
 	AddExpense
 	Report
+	Cancel
 )
 
 const (
