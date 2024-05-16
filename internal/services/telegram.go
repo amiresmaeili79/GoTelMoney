@@ -100,6 +100,8 @@ func (t *TelegramService) handleMsg(u *tgbotapi.Update) {
 		t.addExpenseType(u, conversation)
 	case commands.AddExpense:
 		t.addExpense(u, conversation)
+	case commands.Report:
+		t.getReport(u, conversation)
 	default:
 		chatId := getChatID(u)
 		t.bot.Send(tgbotapi.NewMessage(chatId, messages.Invalid))
@@ -294,6 +296,14 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 		msg.ReplyMarkup = messages.MainMenu
 		t.bot.Send(msg)
 	}
+}
+
+func (t *TelegramService) getReport(u *tgbotapi.Update, c *models.Conversation) {
+	chatId := getChatID(u)
+	user, _ := t.fetchUser(chatId)
+
+	expenses := t.registry.ExpenseRepository().All(user.ID)
+	t.bot.Send(tgbotapi.NewMessage(chatId, utils.PrettyPrintExpenses(expenses)))
 }
 
 func getChatID(u *tgbotapi.Update) int64 {

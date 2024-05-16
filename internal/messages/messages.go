@@ -18,6 +18,9 @@ We are happy to see you here 🎉.`
 	CancelMessage         = "Okay! Back to the main menu."
 	NewExpenseSaved       = "Done! You're good to go."
 	AskType               = "Please select the type of expense!"
+
+	ReportHead = "Expenses (Page %d / %d)\n"
+	ReportRow  = "======\n%.02f\n%s\n%s\n%s\n"
 )
 
 // Error Messages

@@ -16,3 +16,18 @@ func PrettyPrintExpenseTypes(types []models.ExpenseType) string {
 
 	return fullMsg
 }
+
+func PrettyPrintExpenses(expenses []models.Expense) string {
+	fullMsg := messages.ReportHead
+
+	for _, e := range expenses {
+		fullMsg += fmt.Sprintf(messages.ReportRow,
+			e.Amount,
+			e.Description,
+			e.Date.Format("Jan 2, 2006"),
+			e.ExpenseType.Name,
+		)
+	}
+
+	return fullMsg
+}
