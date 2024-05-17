@@ -1,5 +1,6 @@
 package models
 
-type Choosable interface {
+type InlineKeyboardItem interface {
 	ToDisplay() string
+	StringID() string
 }
