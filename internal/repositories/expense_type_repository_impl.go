@@ -23,8 +23,14 @@ func (repo *ExpenseTypeRepositoryImpl) All(userId uint) []models.ExpenseType {
 	return types
 }
 
-func (repo *ExpenseTypeRepositoryImpl) FindByName(name string, userID uint) (models.ExpenseType, error) {
+func (repo *ExpenseTypeRepositoryImpl) GetByName(name string, userID uint) (models.ExpenseType, error) {
 	var exType models.ExpenseType
 	err := repo.db.First(&exType, "user_id = ? AND name = ?", userID, name).Error
+	return exType, err
+}
+
+func (repo *ExpenseTypeRepositoryImpl) GetByID(id uint, userID uint) (models.ExpenseType, error) {
+	var exType models.ExpenseType
+	err := repo.db.First(&exType, "id = ? AND user_id = ?", id, userID).Error
 	return exType, err
 }
