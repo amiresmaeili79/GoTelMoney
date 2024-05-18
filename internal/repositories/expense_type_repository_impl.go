@@ -17,9 +17,9 @@ func (repo *ExpenseTypeRepositoryImpl) Create(exType *models.ExpenseType) error 
 	return repo.db.Create(exType).Error
 }
 
-func (repo *ExpenseTypeRepositoryImpl) All(userId uint) []models.ExpenseType {
+func (repo *ExpenseTypeRepositoryImpl) All(userId uint, page, pageSize int) []models.ExpenseType {
 	var types []models.ExpenseType
-	repo.db.Find(&types, "user_id = ?", userId)
+	getPaginator(repo.db, page, pageSize).Find(&types, "user_id = ?", userId)
 	return types
 }
 

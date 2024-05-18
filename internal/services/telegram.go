@@ -162,7 +162,7 @@ func (t *TelegramService) addExpenseType(u *tgbotapi.Update, c *models.Conversat
 
 	switch c.State {
 	case int(commands.StartAddExpenseType):
-		allTypes := t.registry.ExpenseTypeRepository().All(user.ID)
+		allTypes := t.registry.ExpenseTypeRepository().All(user.ID, -1, -1)
 		msg := tgbotapi.NewMessage(chatId, messages.NewType)
 		msg.ReplyMarkup = messages.CancelKeyboard
 		t.bot.Send(msg)
@@ -265,7 +265,7 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 		}
 		expense.Date = date
 
-		exTypes := t.registry.ExpenseTypeRepository().All(user.ID)
+		exTypes := t.registry.ExpenseTypeRepository().All(user.ID, -1, -1)
 		var data []models.InlineKeyboardItem
 		for _, exType := range exTypes {
 			data = append(data, &exType) // converting to struct
