@@ -1,13 +1,15 @@
 package widgets
 
 import (
+	"fmt"
 	"github.com/amir79esmaeili/go-tel-money/internal/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"math"
 )
 
 // GetDynamicInlineKeyboard Creates dynamic menu based on given data
-func GetDynamicInlineKeyboard(items []models.InlineKeyboardItem, perRow int) *tgbotapi.InlineKeyboardMarkup {
+func GetDynamicInlineKeyboard(items []models.InlineKeyboardItem,
+	perRow int) *tgbotapi.InlineKeyboardMarkup {
 	var rows [][]tgbotapi.InlineKeyboardButton
 	totalChunks := int(math.Ceil(float64(len(items)) / float64(perRow)))
 
@@ -30,4 +32,20 @@ func GetDynamicInlineKeyboard(items []models.InlineKeyboardItem, perRow int) *tg
 
 	inlineKB := tgbotapi.NewInlineKeyboardMarkup(rows...)
 	return &inlineKB
+}
+
+func AddPaginationButtons(k *tgbotapi.InlineKeyboardMarkup, currPage int, prev, next bool) {
+
+	var buttons []tgbotapi.InlineKeyboardButton
+
+	if prev {
+		buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData("⏮️", fmt.Sprintf("%d", currPage-1)))
+	}
+	if next {
+		buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData("⏭️", fmt.Sprintf("%d", currPage+1)))
+	}
+
+	if prev || next {
+		k.InlineKeyboard = append(k.InlineKeyboard, buttons)
+	}
 }
