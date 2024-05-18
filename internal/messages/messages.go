@@ -34,6 +34,7 @@ const (
 	InvalidDate        = "Invalid date! Try again (e.g. 2024-05-25 14:35)"
 	InvalidType        = "Invalid type! Please select one from menu!"
 	ExpenseSaveFailed  = "Failed to save the expense!"
+	InvalidPage        = "The page number is not valid!"
 )
 
 var MainMenu = tgbotapi.NewReplyKeyboard(

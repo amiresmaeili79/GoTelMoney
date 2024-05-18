@@ -307,15 +307,33 @@ func (t *TelegramService) getReport(u *tgbotapi.Update, c *models.Conversation) 
 	chatId := getChatID(u)
 	user, _ := t.fetchUser(chatId)
 
-	expenses := t.registry.ExpenseRepository().All(user.ID, -1, -1)
+	pageSize := 2
+	var page int
+
+	if u.Message != nil { // This is the beginning
+		page = 1
+	} else {
+		page, _ = strconv.Atoi(u.CallbackQuery.Data)
+	}
+	pages, expenses, hasNextPage := t.registry.ExpenseRepository().All(user.ID, page, pageSize)
 	var items []models.InlineKeyboardItem
 	for _, expense := range expenses {
 		items = append(items, &expense)
 	}
 
-	msg := tgbotapi.NewMessage(chatId, fmt.Sprintf(messages.ReportHead, -1, -1))
-	msg.ReplyMarkup = widgets.GetDynamicInlineKeyboard(items, 1)
-	t.bot.Send(msg)
+	messageText := fmt.Sprintf(messages.ReportHead, page, pages)
+	markUp := widgets.GetDynamicInlineKeyboard(items, 1)
+	widgets.AddPaginationButtons(markUp, page, page > 1, hasNextPage)
+	if u.Message != nil {
+		msg := tgbotapi.NewMessage(chatId, messageText)
+		msg.ReplyMarkup = markUp
+		t.bot.Send(msg)
+	} else {
+		msg := tgbotapi.NewEditMessageTextAndMarkup(
+			chatId, u.CallbackQuery.Message.MessageID, messageText, *markUp,
+		)
+		t.bot.Send(msg)
+	}
 }
 
 func getChatID(u *tgbotapi.Update) int64 {

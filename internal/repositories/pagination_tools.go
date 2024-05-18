@@ -20,3 +20,15 @@ func getPaginator(db *gorm.DB, page, pageSize int) *gorm.DB {
 	offset := (page - 1) * pageSize
 	return db.Offset(offset).Limit(pageSize)
 }
+
+func getPageStat[T any](db *gorm.DB, model T, currPage, pageSize int) (bool, int64) {
+	var totalRows int64
+
+	db.Model(model).Count(&totalRows)
+	var hasNextPage bool
+	if int64(currPage)*int64(pageSize) < totalRows {
+		hasNextPage = true
+	}
+
+	return hasNextPage, totalRows
+}
