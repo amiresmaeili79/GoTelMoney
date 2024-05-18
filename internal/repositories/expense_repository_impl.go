@@ -15,9 +15,9 @@ func NewExpenseRepository(db *gorm.DB) *ExpenseRepositoryImpl {
 	}
 }
 
-func (r *ExpenseRepositoryImpl) All(userId uint) []models.Expense {
+func (r *ExpenseRepositoryImpl) All(userId uint, page, pageSize int) []models.Expense {
 	var expenses []models.Expense
-	r.db.Find(&expenses, "user_id = ?", userId)
+	getPaginator(r.db, page, pageSize).Find(&expenses, "user_id = ?", userId)
 	return expenses
 }
 

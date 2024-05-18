@@ -307,8 +307,15 @@ func (t *TelegramService) getReport(u *tgbotapi.Update, c *models.Conversation) 
 	chatId := getChatID(u)
 	user, _ := t.fetchUser(chatId)
 
-	expenses := t.registry.ExpenseRepository().All(user.ID)
-	t.bot.Send(tgbotapi.NewMessage(chatId, models.PrettyPrintExpenses(expenses)))
+	expenses := t.registry.ExpenseRepository().All(user.ID, -1, -1)
+	var items []models.InlineKeyboardItem
+	for _, expense := range expenses {
+		items = append(items, &expense)
+	}
+
+	msg := tgbotapi.NewMessage(chatId, fmt.Sprintf(messages.ReportHead, -1, -1))
+	msg.ReplyMarkup = widgets.GetDynamicInlineKeyboard(items, 1)
+	t.bot.Send(msg)
 }
 
 func getChatID(u *tgbotapi.Update) int64 {
