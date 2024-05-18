@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/amir79esmaeili/go-tel-money/internal/messages"
 	"github.com/amir79esmaeili/go-tel-money/internal/utils"
 	"time"
 
@@ -45,4 +46,29 @@ func (e *Expense) ToDisplay() string {
 
 func (e *Expense) StringID() string {
 	return fmt.Sprintf("%d", e.ID)
+}
+
+func PrettyPrintExpenseTypes(types []ExpenseType) string {
+	fullMsg := messages.Types
+
+	for _, t := range types {
+		fullMsg += fmt.Sprintf(messages.TypeRow, t.Name)
+	}
+
+	return fullMsg
+}
+
+func PrettyPrintExpenses(expenses []Expense) string {
+	fullMsg := messages.ReportHead
+
+	for _, e := range expenses {
+		fullMsg += fmt.Sprintf(messages.ReportRow,
+			e.Amount,
+			e.Description,
+			e.Date.Format("Jan 2, 2006"),
+			e.ExpenseType.Name,
+		)
+	}
+
+	return fullMsg
 }

@@ -1,4 +1,4 @@
-package utils
+package widgets
 
 import (
 	"github.com/amir79esmaeili/go-tel-money/internal/models"
