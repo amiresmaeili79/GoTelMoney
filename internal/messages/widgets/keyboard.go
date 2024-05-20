@@ -34,9 +34,14 @@ func GetDynamicInlineKeyboard(items []models.InlineKeyboardItem,
 	return &inlineKB
 }
 
-func AddPaginationButtons(k *tgbotapi.InlineKeyboardMarkup, currPage int, prev, next bool) {
+func AddPaginationButtons(k *tgbotapi.InlineKeyboardMarkup, currPage int, prev, next bool) *tgbotapi.InlineKeyboardMarkup {
 
 	var buttons []tgbotapi.InlineKeyboardButton
+
+	if k == nil {
+		newKeyboard := tgbotapi.NewInlineKeyboardMarkup()
+		k = &newKeyboard
+	}
 
 	if prev {
 		buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData("⏮️", fmt.Sprintf("%d", currPage-1)))
@@ -47,5 +52,7 @@ func AddPaginationButtons(k *tgbotapi.InlineKeyboardMarkup, currPage int, prev, 
 
 	if prev || next {
 		k.InlineKeyboard = append(k.InlineKeyboard, buttons)
+		return k
 	}
+	return nil
 }
