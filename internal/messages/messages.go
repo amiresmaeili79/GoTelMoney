@@ -19,8 +19,12 @@ We are happy to see you here 🎉.`
 	NewExpenseSaved       = "Done! You're good to go."
 	AskType               = "Please select the type of expense!"
 
-	ReportHead = "Expenses (Page %d / %d)\n"
-	ReportRow  = "======\n%.02f\n%s\n%s\n%s\n"
+	ReportHead   = "Expenses (Page %d / %d)\n"
+	ExpenseRow   = "----------\n#️⃣ %d \n🗓️ %s \n💵 %.2f \n💸 %s \n✍️ %s \n"
+	ExpenseTotal = "----------\n🧮 Total: %.02f \n"
+
+	SelectReportRange = "Please select the report range."
+	StartReport       = "🔍"
 )
 
 // Error Messages
@@ -52,6 +56,12 @@ var CancelKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("Cancel ❌"),
 	),
 )
+
+var ReportRangeKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("This Month", "m"),
+		tgbotapi.NewInlineKeyboardButtonData("This Year", "y"),
+	))
 
 func init() {
 }

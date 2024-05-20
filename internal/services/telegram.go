@@ -8,6 +8,7 @@ import (
 	"github.com/amir79esmaeili/go-tel-money/internal/models"
 	"github.com/amir79esmaeili/go-tel-money/internal/repositories"
 	"github.com/amir79esmaeili/go-tel-money/internal/state"
+	"github.com/amir79esmaeili/go-tel-money/internal/utils"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"log/slog"
@@ -307,30 +308,45 @@ func (t *TelegramService) getReport(u *tgbotapi.Update, c *models.Conversation) 
 	chatId := getChatID(u)
 	user, _ := t.fetchUser(chatId)
 
-	pageSize := 2
-	var page int
+	pageSize := 10
+	page := 1
 
-	if u.Message != nil { // This is the beginning
-		page = 1
-	} else {
-		page, _ = strconv.Atoi(u.CallbackQuery.Data)
-	}
-	pages, expenses, hasNextPage := t.registry.ExpenseRepository().All(user.ID, page, pageSize)
-	var items []models.InlineKeyboardItem
-	for _, expense := range expenses {
-		items = append(items, &expense)
-	}
-
-	messageText := fmt.Sprintf(messages.ReportHead, page, pages)
-	markUp := widgets.GetDynamicInlineKeyboard(items, 1)
-	widgets.AddPaginationButtons(markUp, page, page > 1, hasNextPage)
-	if u.Message != nil {
-		msg := tgbotapi.NewMessage(chatId, messageText)
-		msg.ReplyMarkup = markUp
+	switch c.State {
+	case int(commands.StartReport):
+		msg := tgbotapi.NewMessage(chatId, messages.StartReport)
+		msg.ReplyMarkup = messages.CancelKeyboard
 		t.bot.Send(msg)
-	} else {
+
+		msg = tgbotapi.NewMessage(chatId, messages.SelectReportRange)
+		msg.ReplyMarkup = messages.ReportRangeKeyboard
+		t.bot.Send(msg)
+		c.State += 1
+	case int(commands.AskReportRange):
+		dataRange := u.CallbackQuery.Data
+		callback := tgbotapi.NewCallback(u.CallbackQuery.ID, u.CallbackQuery.Data)
+		t.bot.Request(callback)
+		start, end, err := utils.GetDateRange(dataRange)
+		c.Data = [2]time.Time{start, end}
+		if err != nil {
+			slog.Error("Invalid date range selected!, %v\n", err)
+			t.bot.Send(tgbotapi.NewMessage(chatId, messages.InvalidDate))
+		}
+		pages, expenses, hasNextPage := t.registry.ExpenseRepository().Filter(
+			page, pageSize, "user_id = ? AND date >= ? AND date <= ?", user.ID, start, end)
+		messageText := models.PrettyPrintExpenses(expenses, page, pages)
+		kb := widgets.AddPaginationButtons(nil, page, false, hasNextPage)
+		msg := tgbotapi.NewEditMessageTextAndMarkup(chatId, u.CallbackQuery.Message.MessageID, messageText, *kb)
+		t.bot.Send(msg)
+		c.State += 1
+	case int(commands.ViewData):
+		dateRange := c.Data.([2]time.Time)
+		page, _ = strconv.Atoi(u.CallbackQuery.Data)
+		pages, expenses, hasNextPage := t.registry.ExpenseRepository().Filter(
+			page, pageSize, "user_id = ? AND date >= ? AND date <= ?", user.ID, dateRange[0], dateRange[1])
+		messageText := models.PrettyPrintExpenses(expenses, page, pages)
+		kb := widgets.AddPaginationButtons(nil, page, page > 1, hasNextPage)
 		msg := tgbotapi.NewEditMessageTextAndMarkup(
-			chatId, u.CallbackQuery.Message.MessageID, messageText, *markUp,
+			chatId, u.CallbackQuery.Message.MessageID, messageText, *kb,
 		)
 		t.bot.Send(msg)
 	}
