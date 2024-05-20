@@ -36,11 +36,19 @@ type Expense struct {
 }
 
 func (e *Expense) ToDisplay() string {
-	return fmt.Sprintf("🗓️ %s / %s / 💵 %.2f / %s",
-		e.Date.Format("Jan 2, 2006"),
-		utils.TruncateString(e.Description, 50),
+	var date string
+	if e.Date.Year() == time.Now().Year() {
+		date = e.Date.Format("Jan 2")
+	} else {
+		date = e.Date.Format("Jan 2, 2006")
+	}
+
+	return fmt.Sprintf(messages.ExpenseRow,
+		e.ID,
+		date,
 		e.Amount,
 		e.ExpenseType.Name,
+		utils.TruncateString(e.Description, 50),
 	)
 }
 
@@ -58,17 +66,16 @@ func PrettyPrintExpenseTypes(types []ExpenseType) string {
 	return fullMsg
 }
 
-func PrettyPrintExpenses(expenses []Expense) string {
-	fullMsg := messages.ReportHead
+func PrettyPrintExpenses(expenses []Expense, page, pages int) string {
+	fullMsg := fmt.Sprintf(messages.ReportHead, page, pages)
 
+	var total float32
 	for _, e := range expenses {
-		fullMsg += fmt.Sprintf(messages.ReportRow,
-			e.Amount,
-			e.Description,
-			e.Date.Format("Jan 2, 2006"),
-			e.ExpenseType.Name,
-		)
+		fullMsg += e.ToDisplay()
+		total += e.Amount
 	}
+
+	fullMsg += fmt.Sprintf(messages.ExpenseTotal, total)
 
 	return fullMsg
 }
