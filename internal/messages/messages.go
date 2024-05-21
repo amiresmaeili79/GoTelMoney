@@ -18,6 +18,13 @@ We are happy to see you here 🎉.`
 	CancelMessage         = "Okay! Back to the main menu."
 	NewExpenseSaved       = "Done! You're good to go."
 	AskType               = "Please select the type of expense!"
+
+	ReportHead   = "Expenses (Page %d / %d)\n"
+	ExpenseRow   = "----------\n#️⃣ %d \n🗓️ %s \n💵 %.2f \n💸 %s \n✍️ %s \n"
+	ExpenseTotal = "----------\n🧮 Total: %.02f \n"
+
+	SelectReportRange = "Please select the report range."
+	StartReport       = "🔍"
 )
 
 // Error Messages
@@ -31,6 +38,7 @@ const (
 	InvalidDate        = "Invalid date! Try again (e.g. 2024-05-25 14:35)"
 	InvalidType        = "Invalid type! Please select one from menu!"
 	ExpenseSaveFailed  = "Failed to save the expense!"
+	InvalidPage        = "The page number is not valid!"
 )
 
 var MainMenu = tgbotapi.NewReplyKeyboard(
@@ -48,6 +56,12 @@ var CancelKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("Cancel ❌"),
 	),
 )
+
+var ReportRangeKeyboard = tgbotapi.NewInlineKeyboardMarkup(
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("This Month", "m"),
+		tgbotapi.NewInlineKeyboardButtonData("This Year", "y"),
+	))
 
 func init() {
 }

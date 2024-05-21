@@ -20,7 +20,7 @@ func init() {
 	Commands = map[string]ConvType{
 		"🗂️ Add Expense Type": AddExpenseType,
 		"💵 Add Expense":       AddExpense,
-		"Report":              Report,
+		"🔎 View Report":       Report,
 		"Cancel ❌":            Cancel,
 	}
 }

@@ -3,6 +3,7 @@ package commands
 type ConvType int
 type AddExpenseTypeOrder int
 type AddExpenseOrder int
+type ReportOrder int
 
 const (
 	AddExpenseType ConvType = iota
@@ -22,4 +23,10 @@ const (
 	AskDescriptionAddExpense
 	AskDateAddExpense
 	AskTypeAddExpense
+)
+
+const (
+	StartReport ReportOrder = iota
+	AskReportRange
+	ViewData
 )

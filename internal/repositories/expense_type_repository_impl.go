@@ -17,14 +17,20 @@ func (repo *ExpenseTypeRepositoryImpl) Create(exType *models.ExpenseType) error 
 	return repo.db.Create(exType).Error
 }
 
-func (repo *ExpenseTypeRepositoryImpl) All(userId uint) []models.ExpenseType {
+func (repo *ExpenseTypeRepositoryImpl) All(userId uint, page, pageSize int) []models.ExpenseType {
 	var types []models.ExpenseType
-	repo.db.Find(&types, "user_id = ?", userId)
+	getPaginator(repo.db, page, pageSize).Find(&types, "user_id = ?", userId)
 	return types
 }
 
-func (repo *ExpenseTypeRepositoryImpl) FindByName(name string, userID uint) (models.ExpenseType, error) {
+func (repo *ExpenseTypeRepositoryImpl) GetByName(name string, userID uint) (models.ExpenseType, error) {
 	var exType models.ExpenseType
 	err := repo.db.First(&exType, "user_id = ? AND name = ?", userID, name).Error
+	return exType, err
+}
+
+func (repo *ExpenseTypeRepositoryImpl) GetByID(id uint, userID uint) (models.ExpenseType, error) {
+	var exType models.ExpenseType
+	err := repo.db.First(&exType, "id = ? AND user_id = ?", id, userID).Error
 	return exType, err
 }

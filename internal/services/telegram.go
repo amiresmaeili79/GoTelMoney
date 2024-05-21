@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/amir79esmaeili/go-tel-money/internal/commands"
 	"github.com/amir79esmaeili/go-tel-money/internal/messages"
+	"github.com/amir79esmaeili/go-tel-money/internal/messages/widgets"
 	"github.com/amir79esmaeili/go-tel-money/internal/models"
 	"github.com/amir79esmaeili/go-tel-money/internal/repositories"
 	"github.com/amir79esmaeili/go-tel-money/internal/state"
@@ -100,6 +101,8 @@ func (t *TelegramService) handleMsg(u *tgbotapi.Update) {
 		t.addExpenseType(u, conversation)
 	case commands.AddExpense:
 		t.addExpense(u, conversation)
+	case commands.Report:
+		t.getReport(u, conversation)
 	default:
 		chatId := getChatID(u)
 		t.bot.Send(tgbotapi.NewMessage(chatId, messages.Invalid))
@@ -160,17 +163,17 @@ func (t *TelegramService) addExpenseType(u *tgbotapi.Update, c *models.Conversat
 
 	switch c.State {
 	case int(commands.StartAddExpenseType):
-		allTypes := t.registry.ExpenseTypeRepository().All(user.ID)
+		allTypes := t.registry.ExpenseTypeRepository().All(user.ID, -1, -1)
 		msg := tgbotapi.NewMessage(chatId, messages.NewType)
 		msg.ReplyMarkup = messages.CancelKeyboard
 		t.bot.Send(msg)
-		msg = tgbotapi.NewMessage(chatId, utils.PrettyPrintExpenseTypes(allTypes))
+		msg = tgbotapi.NewMessage(chatId, models.PrettyPrintExpenseTypes(allTypes))
 		t.bot.Send(msg)
 		c.State += 1
 	case int(commands.AskNameAddExpenseType):
 		name := u.Message.Text
 		// Check if type is already added or not!?
-		_, err = t.registry.ExpenseTypeRepository().FindByName(name, user.ID)
+		_, err = t.registry.ExpenseTypeRepository().GetByName(name, user.ID)
 		if err == nil {
 			// this type exists
 			log.Printf("Failed to add a new type, %v. It does exist\n", err)
@@ -243,13 +246,13 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 		expense.Description = u.Message.Text
 		c.State += 1
 		msg := tgbotapi.NewMessage(chatId, messages.NewDate)
-		msg.ReplyMarkup = utils.GenerateCalendar(time.Now().Year(), time.Now().Month())
+		msg.ReplyMarkup = widgets.GenerateCalendar(time.Now().Year(), time.Now().Month())
 		t.bot.Send(msg)
 	case int(commands.AskDateAddExpense):
 		var date time.Time
 		if u.Message == nil {
-			if strings.ContainsAny(u.CallbackQuery.Data, utils.BtnNext+utils.BtnPrev) {
-				cal := utils.HandleButton(u.CallbackQuery.Data)
+			if strings.ContainsAny(u.CallbackQuery.Data, widgets.BtnNext+widgets.BtnPrev) {
+				cal := widgets.HandleButton(u.CallbackQuery.Data)
 				msg := tgbotapi.NewEditMessageReplyMarkup(chatId, u.CallbackQuery.Message.MessageID, cal)
 				t.bot.Send(msg)
 				return
@@ -263,18 +266,23 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 		}
 		expense.Date = date
 
-		exTypes := t.registry.ExpenseTypeRepository().All(user.ID)
-		var data []models.Choosable
+		exTypes := t.registry.ExpenseTypeRepository().All(user.ID, -1, -1)
+		var data []models.InlineKeyboardItem
 		for _, exType := range exTypes {
 			data = append(data, &exType) // converting to struct
 		}
-		replyMarkup := utils.GetDynamicInlineKeyboard(data)
+		replyMarkup := widgets.GetDynamicInlineKeyboard(data, 2)
 		msg := tgbotapi.NewMessage(chatId, messages.AskType)
 		msg.ReplyMarkup = replyMarkup
 		c.State += 1
 		t.bot.Send(msg)
 	case int(commands.AskTypeAddExpense):
-		exType, err := t.registry.ExpenseTypeRepository().FindByName(u.CallbackQuery.Data, user.ID)
+		id, err := strconv.Atoi(u.CallbackQuery.Data)
+		if err != nil {
+			slog.Error("Failed to parse id, %v\n", err)
+			t.bot.Send(tgbotapi.NewMessage(chatId, messages.InvalidType))
+		}
+		exType, err := t.registry.ExpenseTypeRepository().GetByID(uint(id), user.ID)
 		if err != nil {
 			slog.Error("Invalid type %s\n", u.CallbackQuery.Data)
 			t.bot.Send(tgbotapi.NewMessage(chatId, messages.InvalidType))
@@ -292,6 +300,54 @@ func (t *TelegramService) addExpense(u *tgbotapi.Update, c *models.Conversation)
 		t.bot.Request(callback)
 		msg := tgbotapi.NewMessage(chatId, messages.NewExpenseSaved)
 		msg.ReplyMarkup = messages.MainMenu
+		t.bot.Send(msg)
+	}
+}
+
+func (t *TelegramService) getReport(u *tgbotapi.Update, c *models.Conversation) {
+	chatId := getChatID(u)
+	user, _ := t.fetchUser(chatId)
+
+	pageSize := 10
+	page := 1
+
+	switch c.State {
+	case int(commands.StartReport):
+		msg := tgbotapi.NewMessage(chatId, messages.StartReport)
+		msg.ReplyMarkup = messages.CancelKeyboard
+		t.bot.Send(msg)
+
+		msg = tgbotapi.NewMessage(chatId, messages.SelectReportRange)
+		msg.ReplyMarkup = messages.ReportRangeKeyboard
+		t.bot.Send(msg)
+		c.State += 1
+	case int(commands.AskReportRange):
+		dataRange := u.CallbackQuery.Data
+		callback := tgbotapi.NewCallback(u.CallbackQuery.ID, u.CallbackQuery.Data)
+		t.bot.Request(callback)
+		start, end, err := utils.GetDateRange(dataRange)
+		c.Data = [2]time.Time{start, end}
+		if err != nil {
+			slog.Error("Invalid date range selected!, %v\n", err)
+			t.bot.Send(tgbotapi.NewMessage(chatId, messages.InvalidDate))
+		}
+		pages, expenses, hasNextPage := t.registry.ExpenseRepository().Filter(
+			page, pageSize, "user_id = ? AND date >= ? AND date <= ?", user.ID, start, end)
+		messageText := models.PrettyPrintExpenses(expenses, page, pages)
+		kb := widgets.AddPaginationButtons(nil, page, false, hasNextPage)
+		msg := tgbotapi.NewEditMessageTextAndMarkup(chatId, u.CallbackQuery.Message.MessageID, messageText, *kb)
+		t.bot.Send(msg)
+		c.State += 1
+	case int(commands.ViewData):
+		dateRange := c.Data.([2]time.Time)
+		page, _ = strconv.Atoi(u.CallbackQuery.Data)
+		pages, expenses, hasNextPage := t.registry.ExpenseRepository().Filter(
+			page, pageSize, "user_id = ? AND date >= ? AND date <= ?", user.ID, dateRange[0], dateRange[1])
+		messageText := models.PrettyPrintExpenses(expenses, page, pages)
+		kb := widgets.AddPaginationButtons(nil, page, page > 1, hasNextPage)
+		msg := tgbotapi.NewEditMessageTextAndMarkup(
+			chatId, u.CallbackQuery.Message.MessageID, messageText, *kb,
+		)
 		t.bot.Send(msg)
 	}
 }
